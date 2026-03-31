@@ -17,17 +17,27 @@ Together, they demonstrate what production-quality agentic AI looks like: modula
 
 ---
 
-## Tracing with LangSmith — One Line of Code
+## Tracing with LangSmith — Set Env Vars + One Function Call
 
-Adding full observability to a Google ADK pipeline takes a single function call:
+Google ADK has **native LangSmith support built in**. Getting full observability is as simple as setting your environment variables and calling one function at startup:
+
+**Step 1 — Set env vars** (in `.env` or your shell):
+
+```
+LANGSMITH_TRACING=true
+LANGSMITH_API_KEY=your_api_key
+LANGSMITH_PROJECT=your_project_name
+```
+
+**Step 2 — Call once before creating agents:**
 
 ```python
 from langsmith.integrations.google_adk import configure_google_adk
 
-configure_google_adk()  # that's it
+configure_google_adk()
 ```
 
-No decorators. No callbacks. No manual span creation. Call this once at startup and LangSmith automatically captures every agent invocation, LLM call, tool call, input, output, token count, latency, and cost — across every agent in the pipeline — in a fully nested trace.
+That's it. No decorators. No callbacks. No manual span creation. No wrapping your LLM client. Because ADK has native LangSmith support, the integration hooks directly into the framework internals — from that point, LangSmith **automatically captures everything**: every agent invocation, LLM call, tool call, input, output, token count, latency, and cost across the entire multi-agent pipeline, in a fully nested trace.
 
 ---
 
