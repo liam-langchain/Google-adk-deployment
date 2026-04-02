@@ -5,7 +5,6 @@ The LangGraph StateGraph provides the deployment interface; the Google ADK
 SequentialAgent pipeline runs inside the single node.
 """
 
-import asyncio
 import os
 from typing import TypedDict
 
@@ -155,7 +154,7 @@ class State(TypedDict):
     report: str
 
 
-def research_node(state: State) -> State:
+async def research_node(state: State) -> State:
     """Run the Google ADK research pipeline for a given question."""
     configure_google_adk()
 
@@ -166,26 +165,22 @@ def research_node(state: State) -> State:
         session_service=session_service,
     )
 
-    async def _run() -> str:
-        session = await session_service.create_session(
-            app_name="research_app",
-            user_id="user_1",
-            session_id="session_0",
-        )
-        report = ""
-        async for event in runner.run_async(
-            user_id="user_1",
-            session_id=session.id,
-            new_message=types.Content(
-                role="user",
-                parts=[types.Part(text=state["question"])],
-            ),
-        ):
-            if event.is_final_response():
-                report = event.content.parts[0].text
-        return report
-
-    report = asyncio.run(_run())
+    session = await session_service.create_session(
+        app_name="research_app",
+        user_id="user_1",
+        session_id="session_0",
+    )
+    report = ""
+    async for event in runner.run_async(
+        user_id="user_1",
+        session_id=session.id,
+        new_message=types.Content(
+            role="user",
+            parts=[types.Part(text=state["question"])],
+        ),
+    ):
+        if event.is_final_response():
+            report = event.content.parts[0].text
     return {"report": report}
 
 
