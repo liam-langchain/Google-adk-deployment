@@ -6,7 +6,6 @@ SequentialAgent pipeline runs inside the single node.
 """
 
 import os
-from typing import TypedDict
 
 from dotenv import load_dotenv
 
@@ -17,7 +16,9 @@ from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
 from google.genai import types
 from langsmith.integrations.google_adk import configure_google_adk
+from langchain_core.messages import AIMessage
 from langgraph.graph import END, START, StateGraph
+from langgraph.graph.message import MessagesState
 from tavily import TavilyClient
 
 # ---------------------------------------------------------------------------
@@ -149,14 +150,11 @@ research_pipeline = SequentialAgent(
 # ---------------------------------------------------------------------------
 
 
-class State(TypedDict):
-    question: str
-    report: str
-
-
-async def research_node(state: State) -> State:
+async def research_node(state: MessagesState) -> MessagesState:
     """Run the Google ADK research pipeline for a given question."""
     configure_google_adk()
+
+    question = state["messages"][-1].content
 
     session_service = InMemorySessionService()
     runner = Runner(
@@ -176,19 +174,19 @@ async def research_node(state: State) -> State:
         session_id=session.id,
         new_message=types.Content(
             role="user",
-            parts=[types.Part(text=state["question"])],
+            parts=[types.Part(text=question)],
         ),
     ):
         if event.is_final_response():
             report = event.content.parts[0].text
-    return {"report": report}
+    return {"messages": [AIMessage(content=report)]}
 
 
 # ---------------------------------------------------------------------------
 # Compiled graph — referenced by langgraph.json
 # ---------------------------------------------------------------------------
 
-_builder = StateGraph(State)
+_builder = StateGraph(MessagesState)
 _builder.add_node("research", research_node)
 _builder.add_edge(START, "research")
 _builder.add_edge("research", END)
