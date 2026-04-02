@@ -12,3 +12,4 @@ wheels/
 # Environment variables (never commit secrets)
 .env
 .env.local
+.langgraph_api/
